@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/silva-willian/jenkins_exporter/services"
 )
 
 // JenkinsMetricsCollector format metrics for prometheus
@@ -36,37 +38,46 @@ func (collector *JenkinsMetrics) Describe(ch chan<- *prometheus.Desc) {
 //Collect implements required collect function for all promehteus collectors
 func (collector *JenkinsMetrics) Collect(ch chan<- prometheus.Metric) {
 
-	jobs := jenkinsRequest("sre-backend-java")
+	jobsEnv := getJobs()
 
-	for _, job := range jobs {
-		createdTimestamp := job.StartTimeMillis
-		ch <- prometheus.MustNewConstMetric(collector.job,
-			prometheus.CounterValue,
-			createdTimestamp,
-			job.ID,
-			job.Name,
-			job.Status,
-			convert.NanoTimestampToString(job.StartTimeMillis),
-			NanoTimestampToString(job.EndTimeMillis),
-			strconv.FormatFloat(MillisToSecond(job.DurationMillis), 'f', -1, 64),
-			strconv.FormatFloat(MillisToSecond(job.QueueDurationMillis), 'f', -1, 64),
-			strconv.FormatFloat(MillisToSecond(job.PauseDurationMillis), 'f', -1, 64))
+	if jobsEnv == nil || len(jobsEnv) <= 0 {
+		return
+	}
 
-		for _, stage := range job.Stages {
+	for _, jobEnv := range jobsEnv {
 
-			createdTimestamp := stage.StartTimeMillis
-			ch <- prometheus.MustNewConstMetric(collector.stage,
+		jobs := jenkinsRequest(jobEnv)
+
+		for _, job := range jobs {
+			createdTimestamp := job.StartTimeMillis
+			ch <- prometheus.MustNewConstMetric(collector.job,
 				prometheus.CounterValue,
 				createdTimestamp,
 				job.ID,
-				"sre-backend-java",
-				stage.ID,
-				stage.Name,
-				stage.Status,
-				NanoTimestampToString(stage.StartTimeMillis),
-				strconv.FormatFloat(MillisToSecond(stage.DurationMillis), 'f', -1, 64),
-				strconv.FormatFloat(MillisToSecond(stage.PauseDurationMillis), 'f', -1, 64),
-				stage.ExecNode)
+				jobEnv,
+				job.Status,
+				services.NanoTimestampToString(job.StartTimeMillis),
+				services.NanoTimestampToString(job.EndTimeMillis),
+				strconv.FormatFloat(services.MillisToSecond(job.DurationMillis), 'f', -1, 64),
+				strconv.FormatFloat(services.MillisToSecond(job.QueueDurationMillis), 'f', -1, 64),
+				strconv.FormatFloat(services.MillisToSecond(job.PauseDurationMillis), 'f', -1, 64))
+
+			for _, stage := range job.Stages {
+
+				createdTimestamp := stage.StartTimeMillis
+				ch <- prometheus.MustNewConstMetric(collector.stage,
+					prometheus.CounterValue,
+					createdTimestamp,
+					job.ID,
+					jobEnv,
+					stage.ID,
+					stage.Name,
+					stage.Status,
+					services.NanoTimestampToString(stage.StartTimeMillis),
+					strconv.FormatFloat(services.MillisToSecond(stage.DurationMillis), 'f', -1, 64),
+					strconv.FormatFloat(services.MillisToSecond(stage.PauseDurationMillis), 'f', -1, 64),
+					stage.ExecNode)
+			}
 		}
 	}
 }
@@ -95,4 +106,25 @@ func jenkinsRequest(job string) []JenkinsJob {
 	}
 
 	return result
+}
+
+func getSeparator() string {
+	separator := os.Getenv("JENKINS_JOBS_SEPARATOR")
+
+	if separator == "" {
+		separator = ","
+	}
+
+	return separator
+}
+
+func getJobs() []string {
+	separator := getSeparator()
+	jobs := os.Getenv("JENKINS_JOBS")
+
+	if jobs != "" {
+		return strings.Split(jobs, separator)
+	}
+
+	return nil
 }

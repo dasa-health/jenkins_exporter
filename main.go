@@ -8,10 +8,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/silva-willian/jenkins_exporter/collector"
 )
 
 func main() {
-	jenkinsCollector := JenkinsMetricsCollector()
+	jenkinsCollector := collector.JenkinsMetricsCollector()
 	prometheus.MustRegister(jenkinsCollector)
 	http.Handle("/metrics", promhttp.Handler())
 
@@ -22,5 +23,5 @@ func main() {
 	}
 
 	fmt.Println("Server running in port:", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
