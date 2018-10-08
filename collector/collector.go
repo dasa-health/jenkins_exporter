@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/silva-willian/jenkins_exporter/services"
@@ -20,11 +19,11 @@ func JenkinsMetricsCollector() *JenkinsMetrics {
 
 		job: prometheus.NewDesc("jenkins_jobs",
 			"Shows metrics from job",
-			[]string{"id", "name", "status", "startTime", "endTime", "durationMillis", "queueDurationMillis", "pauseDurationMillis"}, nil,
+			[]string{"id", "name", "status", "startTime", "endTime", "durationSeconds", "queueDurationSeconds", "pauseDurationSeconds"}, nil,
 		),
 		stage: prometheus.NewDesc("jenkins_jobs_stages",
-			"Shows metrics from job",
-			[]string{"job_id", "job_name", "id", "name", "status", "startTime", "durationMillis", "pauseDurationMillis", "execNode"}, nil,
+			"Shows metrics from stages job",
+			[]string{"job_id", "job_name", "id", "name", "status", "startTime", "durationSeconds", "pauseDurationSeconds", "execNode"}, nil,
 		),
 	}
 }
@@ -38,15 +37,21 @@ func (collector *JenkinsMetrics) Describe(ch chan<- *prometheus.Desc) {
 //Collect implements required collect function for all promehteus collectors
 func (collector *JenkinsMetrics) Collect(ch chan<- prometheus.Metric) {
 
-	jobsEnv := getJobs()
+	jenkins := getAllJobs()
 
-	if jobsEnv == nil || len(jobsEnv) <= 0 {
+	if len(jenkins.Jobs) <= 0 {
 		return
 	}
 
-	for _, jobEnv := range jobsEnv {
+	jobsSanitize := sanitizeJobs(jenkins.Jobs)
 
-		jobs := jenkinsRequest(jobEnv)
+	if len(jobsSanitize) <= 0 {
+		return
+	}
+
+	for _, jenkinsJob := range jobsSanitize {
+
+		jobs := getJobByName(jenkinsJob.Name)
 
 		for _, job := range jobs {
 			createdTimestamp := job.StartTimeMillis
@@ -54,7 +59,7 @@ func (collector *JenkinsMetrics) Collect(ch chan<- prometheus.Metric) {
 				prometheus.CounterValue,
 				createdTimestamp,
 				job.ID,
-				jobEnv,
+				jenkinsJob.Name,
 				job.Status,
 				services.NanoTimestampToString(job.StartTimeMillis),
 				services.NanoTimestampToString(job.EndTimeMillis),
@@ -69,7 +74,7 @@ func (collector *JenkinsMetrics) Collect(ch chan<- prometheus.Metric) {
 					prometheus.CounterValue,
 					createdTimestamp,
 					job.ID,
-					jobEnv,
+					jenkinsJob.Name,
 					stage.ID,
 					stage.Name,
 					stage.Status,
@@ -82,7 +87,7 @@ func (collector *JenkinsMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func jenkinsRequest(job string) []JenkinsJob {
+func getJobByName(job string) []JobDetails {
 
 	client := http.Client{}
 	request, err := http.NewRequest("GET", os.Getenv("JENKINS_HOST")+"/job/"+job+"/wfapi/runs", nil)
@@ -99,7 +104,7 @@ func jenkinsRequest(job string) []JenkinsJob {
 		log.Fatalln(readErr)
 	}
 
-	var result []JenkinsJob
+	var result []JobDetails
 	jsonError := json.Unmarshal(body, &result)
 	if jsonError != nil {
 		log.Fatalln(jsonError)
@@ -108,23 +113,37 @@ func jenkinsRequest(job string) []JenkinsJob {
 	return result
 }
 
-func getSeparator() string {
-	separator := os.Getenv("JENKINS_JOBS_SEPARATOR")
+func getAllJobs() Jenkins {
+	client := http.Client{}
+	request, err := http.NewRequest("GET", os.Getenv("JENKINS_HOST")+"/api/json", nil)
+	request.SetBasicAuth(os.Getenv("JENKINS_USER"), os.Getenv("JENKINS_PASSWORD"))
 
-	if separator == "" {
-		separator = ","
+	res, err := client.Do(request)
+
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	return separator
+	body, readErr := ioutil.ReadAll(res.Body)
+	if readErr != nil {
+		log.Fatalln(readErr)
+	}
+
+	var result Jenkins
+	jsonError := json.Unmarshal(body, &result)
+	if jsonError != nil {
+		log.Fatalln(jsonError)
+	}
+
+	return result
 }
 
-func getJobs() []string {
-	separator := getSeparator()
-	jobs := os.Getenv("JENKINS_JOBS")
-
-	if jobs != "" {
-		return strings.Split(jobs, separator)
+func sanitizeJobs(n []Jobs) []Jobs {
+	var result []Jobs
+	for _, x := range n {
+		if x.Type == "org.jenkinsci.plugins.workflow.job.WorkflowJob" {
+			result = append(result, x)
+		}
 	}
-
-	return nil
+	return result
 }

@@ -10,8 +10,8 @@ type JenkinsMetrics struct {
 	stage *prometheus.Desc
 }
 
-// JenkinsStages is the struct that does the mapping with the stages of the Jenkis
-type JenkinsStages struct {
+// JobStagesDetails is the struct that does the mapping with the stages of the Jenkis
+type JobStagesDetails struct {
 	Name                string  `json:"name"`
 	ID                  string  `json:"id"`
 	Status              string  `json:"status"`
@@ -21,15 +21,26 @@ type JenkinsStages struct {
 	ExecNode            string  `json:"execNode"`
 }
 
-// Jenkins Job is the struct that represents the jobs of Jenkins
-type JenkinsJob struct {
-	Name                string          `json:"name"`
-	ID                  string          `json:"id"`
-	Status              string          `json:"status"`
-	StartTimeMillis     float64         `json:"startTimeMillis"`
-	EndTimeMillis       float64         `json:"endTimeMillis"`
-	DurationMillis      float64         `json:"durationMillis"`
-	QueueDurationMillis float64         `json:"queueDurationMillis"`
-	PauseDurationMillis float64         `json:"pauseDurationMillis"`
-	Stages              []JenkinsStages `json:"stages"`
+// JobDetails is the struct that represents the jobs of Jenkins
+type JobDetails struct {
+	Name                string             `json:"name"`
+	ID                  string             `json:"id"`
+	Status              string             `json:"status"`
+	StartTimeMillis     float64            `json:"startTimeMillis"`
+	EndTimeMillis       float64            `json:"endTimeMillis"`
+	DurationMillis      float64            `json:"durationMillis"`
+	QueueDurationMillis float64            `json:"queueDurationMillis"`
+	PauseDurationMillis float64            `json:"pauseDurationMillis"`
+	Stages              []JobStagesDetails `json:"stages"`
+}
+
+// Jenkins is the struct that represents the Jenkins
+type Jenkins struct {
+	Jobs []Jobs `json:"jobs"`
+}
+
+// Jobs represents the main structure of jobs in the main Jenkis api
+type Jobs struct {
+	Name string `json:"name"`
+	Type string `json:"_class"`
 }
