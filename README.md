@@ -17,7 +17,7 @@ See URL [http://localhost:3000/metrics](http://localhost:3000/metrics) to retrie
 
 ### Building with Docker
 
-    docker build --tag jenkins_exporter --build-arg PORT=3000 --build-arg JENKINS_HOST=http://your_host.com --build-arg JENKINS_USER=your_user --build-arg JENKINS_PASSWORD=your_pass --build-arg -f Dockerfile .
+    docker build --tag jenkins_exporter --build-arg PORT=3000 --build-arg JENKINS_HOST=http://your_host.com --build-arg JENKINS_USER=your_user --build-arg JENKINS_PASSWORD=your_pass -f Dockerfile .
 
     docker run -d -p 3000:3000 --name jenkins_exporter 
 
