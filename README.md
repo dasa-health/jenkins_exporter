@@ -27,7 +27,7 @@ See URL [http://localhost:3000/metrics](http://localhost:3000/metrics) to retrie
 
 * Automatically Recovering All Jenkins Type Pipeline as Code Jobs
 * Removing environment variables JENKINS_JOBS_SEPARATOR and JENKINS_JOBS
-
+* Standardizing the name and value of fields from milliseconds to seconds
 
 ### 1.0.0 (05.10.2018)
 
