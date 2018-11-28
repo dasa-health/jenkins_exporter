@@ -1,11 +1,15 @@
 package collector
 
-import (
-	"github.com/prometheus/client_golang/prometheus"
-)
+import "github.com/prometheus/client_golang/prometheus"
 
-// JenkinsMetrics is the struct that maps the entities to the Prometheus client
-type JenkinsMetrics struct {
+// JobsCollector is the struct that maps the entities to the Prometheus client
+type JobsCollector struct {
+	job *prometheus.Desc
+}
+
+// JenkinsCollector is the struct that maps the entities to the Prometheus client
+type JenkinsCollector struct {
+	name  string
 	job   *prometheus.Desc
 	stage *prometheus.Desc
 }

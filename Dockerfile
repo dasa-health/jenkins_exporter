@@ -1,21 +1,31 @@
 FROM golang:1.10-alpine
 
-LABEL maintainer="The Prometheus Authors <prometheus-developers@googlegroups.com>"
+LABEL maintainer="Dasa <devops-team@dasa.com.br>"
 
-ARG PORT
-ARG JENKINS_HOST
-ARG JENKINS_USER
-ARG JENKINS_PASSWORD
+ARG port
+ARG jenkinsHost
+ARG jenkinsUser
+ARG jenkinsPassword
+ARG environment
+ARG release
+ARG elkHost
+ARG elkIndex
+ARG activeLogSegregation
 
-ENV PORT $PORT
-ENV JENKINS_HOST $JENKINS_HOST
-ENV JENKINS_USER $JENKINS_USER
-ENV JENKINS_PASSWORD $JENKINS_PASSWORD
+ENV port $port
+ENV jenkinsHost $jenkinsHost
+ENV jenkinsUser $jenkinsUser
+ENV jenkinsPassword $jenkinsPassword
+ENV environment $environment
+ENV release $release
+ENV elkHost $elkHost
+ENV elkIndex $elkIndex
+ENV activeLogSegregation $activeLogSegregation
 
 WORKDIR /go/src/app
 COPY . .
 
-RUN apk add --update git
+RUN apk add util-linux && apk add --update git
 
 RUN go get -d -v ./...
 RUN go install -v ./...
