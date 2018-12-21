@@ -30,6 +30,10 @@ See URL [http://localhost:3000/metrics?jobname=your_jobname](http://localhost:30
 
 ## Releases
 
+### 2.0.1 (21.12.2018)
+
+* Fixing the repository where the service module was being retrieved
+
 ### 2.0.0 (28.11.2018)
 
 * Standardization of environment variables for camel case

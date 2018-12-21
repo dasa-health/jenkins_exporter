@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	logger "github.com/dasa-health/elk-logger"
+	"github.com/dasa-health/jenkins_exporter/services"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/silva-willian/jenkins_exporter/services"
 )
 
 // JenkinsMetricsCollector create collector metrics
